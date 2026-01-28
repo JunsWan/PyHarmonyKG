@@ -155,28 +155,28 @@ $(ok,\Pi,C) \leftarrow$ \textsc{DFS}$(Q,\Pi,V)$；\;
 
 ```mermaid
 flowchart TD
-  A([Start]) --> B[初始化: Π←E, Q←T, V←∅]
-  B --> C{Q 为空?}
-  C -- 是 --> Z([返回 ok=true, Π])
-  C -- 否 --> D[弹出 (p,S)]
-  D --> E{(p,S) ∈ V ?}
-  E -- 是 --> C
-  E -- 否 --> F[加入 V]
-  F --> G[从 G 获取 Vp=Versions(p)]
-  G --> H{Vp 为空?}
-  H -- 是 --> Y([失败: NoVersion(p)])
-  H -- 否 --> I[按 S 过滤/排序候选 Cp]
-  I --> J{已有 Π[p] 且满足 S ?}
-  J -- 是 --> K[将 Π[p] 前置到 Cp]
-  J -- 否 --> L[遍历 Cp]
+  A([Start]) --> B[初始化：Pi=empty，Q=T，V=empty]
+  B --> C{Q 为空？}
+  C -->|是| Z([返回 ok=true，Pi])
+  C -->|否| D[弹出 p_S]
+  D --> E{p_S in V？}
+  E -->|是| C
+  E -->|否| F[加入 V]
+  F --> G[获取 Vp = Versions_p]
+  G --> H{Vp 为空？}
+  H -->|是| Y([失败：NoVersion_p])
+  H -->|否| I[按 S 过滤/排序候选 Cp]
+  I --> J{已有 Pi_p 且满足 S？}
+  J -->|是| K[将 Pi_p 前置到 Cp]
+  J -->|否| L[遍历 Cp]
   K --> L
-  L --> M[选择 cand v 写入 Π]
-  M --> N[取依赖 D(p,v), 忽略 extra marker]
+  L --> M[选择候选 v 写入 Pi]
+  M --> N[取依赖 D_p_v，忽略 extra marker]
   N --> O[依赖约束追加进 Q]
-  O --> P{递归 DFS 成功?}
-  P -- 是 --> Z
-  P -- 否 --> Q[回滚 cand, 尝试下一 v]
-  Q --> L
+  O --> P{递归 DFS 成功？}
+  P -->|是| Z
+  P -->|否| R[回滚候选，尝试下一个 v]
+  R --> L
   L -->|候选耗尽| Y
 ```
 
