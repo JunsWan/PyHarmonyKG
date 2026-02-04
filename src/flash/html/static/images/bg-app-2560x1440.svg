@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1440" viewBox="0 0 2560 1440">
+  <defs>
+    <linearGradient id="ga" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e0f2fe"/>
+      <stop offset="50%" stop-color="#fdf2f8"/>
+      <stop offset="100%" stop-color="#ecfeff"/>
+    </linearGradient>
+    <radialGradient id="rb" cx="30%" cy="25%" r="60%">
+      <stop offset="0%" stop-color="#a5b4fc" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#a5b4fc" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rc" cx="75%" cy="70%" r="55%">
+      <stop offset="0%" stop-color="#f472b6" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#f472b6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="2560" height="1440" fill="url(#ga)"/>
+  <rect width="2560" height="1440" fill="url(#rb)"/>
+  <rect width="2560" height="1440" fill="url(#rc)"/>
+  <text x="50%" y="50%" text-anchor="middle" fill="#111827" font-family="Nunito, sans-serif" font-size="40" font-weight="700" opacity="0.35">
+    App �o`M 2560x1440
+  </text>
+</svg>

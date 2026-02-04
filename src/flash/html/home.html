@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/static/favicon.ico">
+  <title>知识图谱首页</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #fb7185;
+      --accent2: #34d399;
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0; padding:0;
+      font-family:"Nunito", sans-serif;
+      min-height:100vh;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--text);
+      background: linear-gradient(135deg, rgba(255,255,255,0.65), rgba(255,255,255,0.65)), url("/static/images/bg-landing-1920x1080.svg");
+      background-size: cover;
+      background-position: center;
+    }
+    .hero{
+      width: min(960px, 92vw);
+      background: rgba(255,255,255,0.82);
+      border:1px solid #e2e8f0;
+      border-radius:24px;
+      padding:36px;
+      box-shadow:0 18px 36px rgba(15,23,42,0.12);
+      backdrop-filter: blur(8px);
+    }
+    h1{margin:0 0 12px 0; font-size:32px;}
+    p{margin:6px 0 14px 0; color:var(--muted);}
+    .tags{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0;}
+    .tag{
+      padding:8px 12px;
+      border-radius:12px;
+      background:rgba(52,211,153,0.12);
+      color:#0f172a;
+      border:1px solid rgba(52,211,153,0.35);
+      font-size:14px;
+    }
+    .cta{
+      margin-top:18px;
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    a.button{
+      text-decoration:none;
+      padding:12px 18px;
+      border-radius:14px;
+      background:linear-gradient(135deg, var(--accent), var(--accent2));
+      color:white;
+      font-weight:700;
+      box-shadow:0 14px 28px rgba(251,113,133,0.25);
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    a.button:hover{transform:translateY(-1px); box-shadow:0 18px 32px rgba(52,211,153,0.25);}
+    .hint{font-size:13px; color:var(--muted);}
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <h1>Python 依赖知识图谱</h1>
+    <p>可视化依赖关系 · 规划安装清单 · LLM 助手对话</p>
+    <div class="tags">
+      <span class="tag">Plotly 依赖图</span>
+      <span class="tag">多包规划</span>
+      <span class="tag">流式大模型</span>
+      <span class="tag">Neo4j 实时查询</span>
+    </div>
+    <div class="cta">
+      <a class="button" href="/app">进入主界面</a>
+      <span class="hint">若已在应用页，可直接刷新 /app</span>
+    </div>
+  </div>
+</body>
+</html>

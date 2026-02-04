@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/static/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>知识图谱依赖助手</title>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <style>
+    :root {
+      --bg: linear-gradient(135deg, rgba(254, 243, 199, 0.9) 0%, rgba(224, 242, 254, 0.9) 100%);
+      --bg-img: url("/static/images/bg-app-2560x1440.svg?v=2");
+      --card-img: url("/static/images/bg-card-1600x900.svg?v=2");
+      --env-img: url("/static/images/bg-env-1200x800.png?v=2");
+      --new-img: url("/static/images/bg-new-1200x800.png?v=2");
+      --chat-img: url("/static/images/bg-chat-1200x800.png?v=2");
+      --install-img: url("/static/images/bg-install-1200x800.png?v=2");
+      --graph-img: url("/static/images/bg-graph-1200x800.png?v=2");
+      --card: #ffffffcc;
+      --border: #e0e7ff;
+      --accent: #fb7185;
+      --accent2: #34d399;
+      --text: #0f172a;
+      --muted: #6b7280;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin:0; padding:0; font-family: "Nunito", sans-serif; height:100vh;
+      background: var(--bg), var(--bg-img);
+      background-size: cover, cover;
+      background-position: center, center;
+      background-attachment: fixed;
+      color: var(--text); display:flex;
+    }
+    #left, #right { padding:16px; display:flex; flex-direction:column; gap:12px; position:relative; min-height:0; }
+    #left::before, #right::before{
+      content:""; position:absolute; inset:0;
+      background-image: var(--card-img);
+      background-size: 1200px 1200px;
+      background-repeat: repeat;
+      opacity:0.06; pointer-events:none;
+    }
+    #left > *, #right > * { position:relative; z-index:1; }
+    #left { flex: 3; border-right:1px solid var(--border); }
+    #right { flex: 2; }
+    .card {
+      background: var(--card);
+      background-image: var(--card-img);
+      background-size: 900px 900px;
+      background-repeat: repeat;
+      background-blend-mode: lighten;
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:12px;
+      box-shadow:0 12px 24px rgba(0,0,0,0.08);
+    }
+    .card-env { background-image: var(--card-img), var(--env-img); background-size: 900px 900px, cover; }
+    .card-new { background-image: var(--card-img), var(--new-img); background-size: 900px 900px, cover; }
+    .card-chat { background-image: var(--card-img), var(--chat-img); background-size: 900px 900px, cover; }
+    .card-install { background-image: var(--card-img), var(--install-img); background-size: 900px 900px, cover; }
+    .card-graph { background-image: var(--card-img), var(--graph-img); background-size: 900px 900px, cover; }
+    textarea {
+      width:100%;
+      min-height:120px;
+      border:1px solid rgba(224,231,255,0.6);
+      border-radius:8px;
+      padding:8px;
+      font-family: monospace;
+      background: rgba(255,255,255,0.32);
+      backdrop-filter: blur(6px);
+    }
+    input[type="text"] {
+      width:100%;
+      border:1px solid rgba(224,231,255,0.6);
+      border-radius:8px;
+      padding:8px;
+      background: rgba(255,255,255,0.32);
+      backdrop-filter: blur(6px);
+    }
+    textarea::placeholder,
+    input::placeholder { color: var(--muted); }
+    button { margin-top:6px; padding:10px 14px; border:none; border-radius:10px; background: var(--accent); color:white; cursor:pointer; box-shadow:0 6px 12px rgba(0,0,0,0.08); transition: transform .1s ease, box-shadow .1s ease; }
+    button:hover { transform: translateY(-1px); box-shadow:0 10px 18px rgba(0,0,0,0.12); }
+    #btn-show-old { background: var(--accent2); }
+    #btn-show-new { background: #38bdf8; }
+    button:disabled { opacity:0.6; cursor:not-allowed; }
+    #graph {
+      flex:1;
+      border:1px solid rgba(224,231,255,0.6);
+      border-radius:12px;
+      background: rgba(255,255,255,0.3);
+      backdrop-filter: blur(6px);
+      min-height:480px;
+      height:100%;
+    }
+    .card-chat {
+      min-height: 0;
+      overflow: hidden;
+    }
+    #chat-window { 
+      flex:1; 
+      border:1px solid var(--border); 
+      border-radius:12px; 
+      background:#fff; 
+      overflow-y:auto; 
+      overflow-x:hidden;
+      padding:10px; 
+      min-height:0;
+    }
+    #chat-input { width:100%; }
+    .msg-user { color:#2563eb; margin-bottom:6px; }
+    .msg-assist { color:#111827; margin-bottom:6px; }
+    .toolbar { display:flex; gap:8px; flex-wrap:wrap; }
+    .status { color: var(--muted); font-size:13px; }
+    h3 { margin:4px 0 8px 0; }
+  </style>
+</head>
+<body>
+  <div id="left">
+    <div class="card card-env">
+      <h3>环境包（pip list 粘贴，每行 name==version 或 name）</h3>
+      <textarea id="env-input" placeholder="requests==2.31.0&#10;numpy==1.24.0"></textarea>
+      <div class="toolbar">
+        <button id="btn-graph-old">绘制当前依赖图</button>
+        <button id="btn-health">检查服务</button>
+        <span class="status" id="status-left"></span>
+      </div>
+    </div>
+    <div class="card card-new">
+      <h3>新增包（多行，name==version，可不填版本）</h3>
+      <textarea id="new-pkg" style="width:100%; min-height:80px;" placeholder="transformers==4.57.2&#10;urllib3"></textarea>
+      <div class="toolbar">
+        <button id="btn-graph-new">导入新包并显示新图</button>
+        <button id="btn-show-old">查看旧图</button>
+        <button id="btn-show-new">查看新图</button>
+      </div>
+    </div>
+    <div class="card card-graph" style="flex:1; display:flex; flex-direction:column;">
+      <h3>依赖图</h3>
+      <div id="graph"></div>
+    </div>
+  </div>
+  <div id="right">
+    <div class="card card-chat" style="flex:1; display:flex; flex-direction:column;">
+      <h3>大模型对话</h3>
+      <div id="chat-window"></div>
+      <textarea id="chat-input" placeholder="输入你的问题"></textarea>
+      <div class="toolbar">
+        <button id="btn-send">发送</button>
+        <button id="btn-ask-install">生成安装清单（==版本号，一行一个包）</button>
+        <span class="status" id="status-chat"></span>
+      </div>
+    </div>
+    <div class="card card-install">
+      <h3>安装清单（每行 name==version，可多行）</h3>
+      <textarea id="install-input" placeholder="requests==2.31.0&#10;urllib3==1.26.18"></textarea>
+      <div class="toolbar">
+        <button id="btn-plan">依赖规划（tasks.py task3）</button>
+        <span class="status" id="status-plan"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const graphContainer = document.getElementById('graph');
+    let network = null;
+    let oldGraph = null, newGraph = null;
+    let history = [];
+    let controller = null;
+    const chatWindow = document.getElementById('chat-window');
+    const installInput = document.getElementById('install-input');
+    let lastPlanText = "";
+
+    function parseEnv(text) {
+      return text.split(/\n/).map(x=>x.trim()).filter(Boolean).map(line=>{
+        const [nameVer,] = line.split(/\s+/);
+        const parts = nameVer.split("==");
+        return {name: parts[0], version: parts[1] || null};
+      });
+    }
+
+    const stripVer = (s)=> s.replace(/(@|==).*/,'');
+
+    function drawGraph(data) {
+      const statusEl = document.getElementById('status-left');
+      if(!data) { statusEl.textContent = "未获取到图数据"; return; }
+      if(!data.nodes || data.nodes.length===0){
+        statusEl.textContent = "图为空，检查包名或服务";
+        Plotly.purge(graphContainer);
+        return;
+      }
+      const nodes = (data.nodes || []).map(n=>({id: stripVer(n.id), label: stripVer(n.label||n.id)}));
+      const edges = (data.edges || []).map(e=>({from: stripVer(e.from), to: stripVer(e.to), spec: ""}));
+      const skipped = data.skipped || [];
+      statusEl.textContent = `节点 ${nodes.length}，边 ${edges.length||0}`;
+      if(skipped.length){
+        statusEl.textContent += `，未找到版本: ${skipped.join(',')}`;
+      }
+
+      // 简单圆形布局
+      const N = nodes.length;
+      const angleStep = 2*Math.PI / Math.max(N,1);
+      const pos = {};
+      nodes.forEach((n, idx)=>{
+        const ang = idx*angleStep;
+        pos[n.id] = {x: Math.cos(ang), y: Math.sin(ang)};
+      });
+
+      // 边线 + 注释箭头
+      const edgeTraces = [];
+      const ann = [];
+      edges.forEach(e=>{
+        const p1 = pos[e.from];
+        const p2 = pos[e.to];
+        edgeTraces.push({
+          x:[p1.x, p2.x], y:[p1.y, p2.y],
+          mode:'lines',
+          line:{color:'#94a3b8', width:2},
+          hoverinfo:'text',
+          text: e.spec || ''
+        });
+        ann.push({
+          x: p2.x, y: p2.y,
+          ax: p1.x, ay: p1.y,
+          xref:'x', yref:'y', axref:'x', ayref:'y',
+          showarrow:true, arrowhead:3, arrowsize:1.5, arrowwidth:2, arrowcolor:'#94a3b8',
+          text: e.spec || '', font:{size:10}
+        });
+      });
+
+      // 节点
+      const nodeTrace = {
+        x: nodes.map(n=>pos[n.id].x),
+        y: nodes.map(n=>pos[n.id].y),
+        mode:'markers+text',
+        text: nodes.map(n=>n.id),
+        textposition:'top center',
+        marker:{size:12, color:'#2563eb'},
+        hoverinfo:'text'
+      };
+
+      Plotly.newPlot(graphContainer, [...edgeTraces, nodeTrace], {
+        margin:{l:0,r:0,t:0,b:0},
+        xaxis:{visible:false},
+        yaxis:{visible:false},
+        showlegend:false,
+        annotations: ann,
+      }, {displayModeBar:false, responsive:true});
+    }
+
+    async function postJSON(url, body, statusEl) {
+      try {
+        statusEl && (statusEl.textContent = "请求中…");
+        const res = await fetch(url, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(body)
+        });
+        if(!res.ok) throw new Error(await res.text());
+        return await res.json();
+      } catch(e) {
+        alert(e);
+        throw e;
+      } finally {
+        statusEl && (statusEl.textContent = "");
+      }
+    }
+
+    document.getElementById('btn-graph-old').onclick = async ()=>{
+      try{
+        const pkgs = parseEnv(document.getElementById('env-input').value);
+        const data = await postJSON('/graph/old', {packages: pkgs}, document.getElementById('status-left'));
+        oldGraph = data; newGraph = null;
+        drawGraph(oldGraph);
+      }catch(e){}
+    };
+
+    document.getElementById('btn-graph-new').onclick = async ()=>{
+      try{
+        const pkgs = parseEnv(document.getElementById('env-input').value);
+        const newPkgText = document.getElementById('new-pkg').value.trim();
+        let new_packages = [];
+        if(newPkgText){
+          new_packages = newPkgText.split(/\n/).map(x=>x.trim()).filter(Boolean).map(line=>{
+            const parts = line.split("==");
+            return {name: parts[0], version: parts[1]||null};
+          });
+        }
+        const data = await postJSON('/graph/new', {packages: pkgs, new_packages:new_packages}, document.getElementById('status-left'));
+        oldGraph = data.old; newGraph = data.new;
+        // 自动显示新图
+        drawGraph(newGraph);
+      }catch(e){}
+    };
+
+    document.getElementById('btn-show-old').onclick = ()=>{ if(oldGraph) drawGraph(oldGraph); };
+    document.getElementById('btn-show-new').onclick = ()=>{ if(newGraph) drawGraph(newGraph); };
+
+    document.getElementById('btn-health').onclick = async ()=>{
+      try{
+        const res = await fetch('/health');
+        const data = await res.json();
+        document.getElementById('status-left').textContent = `健康检查: ${JSON.stringify(data)}`;
+      }catch(e){ alert(e); }
+    };
+
+    function addMsg(role, text, isAppend=false){
+      const div = document.createElement('div');
+      div.className = role==='user'?'msg-user':'msg-assist';
+      div.textContent = (role==='user'?'我: ':'助手: ')+text;
+      if(isAppend && chatWindow.lastChild && chatWindow.lastChild.className===div.className){
+        chatWindow.lastChild.textContent += text;
+      }else{
+        chatWindow.appendChild(div);
+      }
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    document.getElementById('btn-send').onclick = async ()=>{
+      const content = document.getElementById('chat-input').value.trim();
+      if(!content) return;
+      history.push({role:'user', content});
+      addMsg('user', content);
+      document.getElementById('chat-input').value='';
+      const envText = document.getElementById('env-input').value;
+      await streamChat({history, env_text: envText, plan_context: lastPlanText});
+    };
+
+    document.getElementById('btn-ask-install').onclick = ()=>{
+      document.getElementById('chat-input').value = "请列出需要安装的包，每行一个，格式 name==version，仅列出安装清单。";
+    };
+
+    function parseInstall(text){
+      return text.split(/\n/).map(x=>x.trim()).filter(Boolean).map(line=>{
+        const m = line.match(/^([A-Za-z0-9_.\-]+)\s*(==|>=|<=|>|<)?\s*(.*)$/);
+        if(!m) return null;
+        return {name: m[1], spec: (m[2]||"")+(m[3]||"")};
+      }).filter(Boolean);
+    }
+
+    document.getElementById('btn-plan').onclick = async ()=>{
+      try{
+        const pkgs = parseEnv(document.getElementById('env-input').value);
+        const installs = parseInstall(document.getElementById('install-input').value);
+        const res = await postJSON('/plan', {env: pkgs, targets: installs}, document.getElementById('status-plan'));
+        if(res.ok){
+          const planLines = Object.entries(res.plan||{}).map(([k,v])=>`${k}==${v[0]} (${v[1]})`);
+          lastPlanText = res.plan_text || planLines.join('\n');
+          const msg = `规划成功：\n${planLines.join('\n')}`;
+          addMsg('assistant', msg);
+          history.push({role:'assistant', content: msg});
+        }else{
+          const msg = `规划失败：${(res.conflicts||[]).join('; ')}`;
+          addMsg('assistant', msg);
+          history.push({role:'assistant', content: msg});
+          lastPlanText = "";
+        }
+      }catch(e){}
+    };
+
+    async function streamChat(body){
+      const statusEl = document.getElementById('status-chat');
+      statusEl.textContent = "LLM 流式生成中…";
+      controller = new AbortController();
+      let acc = "";
+      let started = false;
+      try{
+        const res = await fetch('/chat', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
+        if(!res.ok) throw new Error(await res.text());
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        while(true){
+          const {done, value} = await reader.read();
+          if(done) break;
+          const chunk = decoder.decode(value, {stream:true});
+          if(!chunk) continue;
+          acc += chunk;
+          addMsg('assistant', chunk, true);
+          started = true;
+        }
+        history.push({role:'assistant', content: acc});
+      }catch(e){
+        addMsg('assistant', `[错误] ${e}`);
+      }finally{
+        statusEl.textContent = started ? "生成完成" : "";
+      }
+    }
+  </script>
+</body>
+</html>
